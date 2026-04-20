@@ -1,18 +1,29 @@
 package polsl.wtto.banktdd.domain;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+@Entity
+@Table(name = "accounts")
+@Getter
+@NoArgsConstructor
 public class Account {
 
-    @Getter
-    @Setter
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
     private String accountNumber;
 
-    @Getter
-    @Setter
     private BigDecimal balance;
 
     public Account(String accountNumber, BigDecimal balance) {

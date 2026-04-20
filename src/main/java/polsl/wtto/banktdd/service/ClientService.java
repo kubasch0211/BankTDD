@@ -26,4 +26,11 @@ public class ClientService {
 
         clientRepository.save(new Client(firstName, lastName, pesel));
     }
+    public void deleteClient(String pesel) {
+        Client client = clientRepository.findByPesel(pesel)
+                .orElseThrow(() -> new IllegalArgumentException("Klient z podanym numerem PESEL nie istnieje"));
+
+        clientRepository.delete(client);
+    }
+
 }

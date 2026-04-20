@@ -74,4 +74,39 @@ class ClientServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("PESEL musi mieć dokładnie 11 cyfr");
     }
+
+    @Test
+    void shouldDeleteClientSuccessfully() {
+        // given
+        String pesel = "12345678901";
+        // Tworzymy "istniejącego" klienta, którego chcemy usunąć
+        Client existingClient = new Client("Jan", "Kowalski", pesel);
+
+        // Uczymy atrapę bazy danych: jak zapytam o ten PESEL, zwróć mi tego klienta
+        when(clientRepository.findByPesel(pesel)).thenReturn(java.util.Optional.of(existingClient));
+
+        // when: Wywołujemy akcję usuwania
+        clientService.deleteClient(pesel);
+
+        // then: Sprawdzamy, czy serwis faktycznie zlecił bazie usunięcie tego konkretnego obiektu
+        verify(clientRepository).delete(existingClient);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDeletingNonExistentClient() {
+        // given
+        String pesel = "99999999999";
+
+        // Baza danych mówi: "Nie mam nikogo z takim PESEL-em"
+        when(clientRepository.findByPesel(pesel)).thenReturn(java.util.Optional.empty());
+
+        // when & then: Oczekujemy błędu
+        assertThatThrownBy(() -> clientService.deleteClient(pesel))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Klient z podanym numerem PESEL nie istnieje");
+
+        // Upewniamy się, że serwis w ogóle nie próbował wywołać usuwania (bo nie miał kogo)
+        verify(clientRepository, never()).delete(any());
+    }
 }
+

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import polsl.wtto.banktdd.domain.Account;
+import polsl.wtto.banktdd.domain.OperationType;
 import polsl.wtto.banktdd.repository.AccountRepository;
 import polsl.wtto.banktdd.service.validation.AccountNumberValidator;
 
@@ -15,6 +16,7 @@ public class TransactionService {
 
     private final AccountRepository accountRepository;
     private final AccountNumberValidator validator;
+    private final HistoryService historyService;
 
     @Transactional
     public void transfer(String fromNumber, String toNumber, BigDecimal amount) {
@@ -33,5 +35,8 @@ public class TransactionService {
 
         accountRepository.save(source);
         accountRepository.save(target);
+
+        historyService.logOperation(fromNumber, amount.negate(), OperationType.TRANSFER);
+        historyService.logOperation(toNumber, amount, OperationType.TRANSFER);
     }
 }

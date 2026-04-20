@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import polsl.wtto.banktdd.domain.Account;
 import polsl.wtto.banktdd.domain.Loan;
+import polsl.wtto.banktdd.domain.OperationType;
 import polsl.wtto.banktdd.repository.AccountRepository;
 import polsl.wtto.banktdd.repository.LoanRepository;
 import polsl.wtto.banktdd.service.validation.AccountNumberValidator;
@@ -18,6 +19,7 @@ public class LoanService {
     private final AccountRepository accountRepository;
     private final LoanRepository loanRepository;
     private final AccountNumberValidator accountNumberValidator;
+    private final HistoryService historyService;
 
     @Transactional
     public void takeLoan(String accountNumber, BigDecimal loanAmount) {
@@ -35,6 +37,9 @@ public class LoanService {
 
         Loan loan = new Loan(accountNumber, loanAmount, totalDebt);
         loanRepository.save(loan);
+
+        // Logowanie otrzymania kredytu
+        historyService.logOperation(accountNumber, loanAmount, OperationType.LOAN);
     }
 
     @Transactional
@@ -44,6 +49,7 @@ public class LoanService {
 
         Loan loan = loanRepository.findByAccountName(accountNumber)
                 .orElseThrow(() -> new IllegalArgumentException("To konto nie ma aktywnego kredytu"));
+
         if (account.getBalance().compareTo(amount) < 0) {
             throw new IllegalArgumentException("Niewystarczające środki na koncie do spłaty raty");
         }
@@ -61,5 +67,6 @@ public class LoanService {
 
         accountRepository.save(account);
 
+        historyService.logOperation(accountNumber, amount.negate(), OperationType.LOAN);
     }
 }

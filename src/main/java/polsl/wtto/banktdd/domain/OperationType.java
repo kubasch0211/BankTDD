@@ -1,5 +1,5 @@
 package polsl.wtto.banktdd.domain;
 
 public enum OperationType {
-    DEPOSIT, WITHDRAWAL, TRANSFER
+    DEPOSIT, WITHDRAWAL, TRANSFER, LOAN
 }

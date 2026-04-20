@@ -30,7 +30,7 @@ class LoanServiceTest {
     private LoanRepository loanRepository;
 
     @Mock
-    private AccountNumberValidator accountNumberValidator; // Dodany mock walidatora
+    private AccountNumberValidator accountNumberValidator;
 
     @InjectMocks
     private LoanService loanService;

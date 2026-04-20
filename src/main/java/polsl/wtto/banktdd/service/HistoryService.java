@@ -11,7 +11,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class HistoryService {
     private final OperationRepository operationRepository;
-    List<OperationLog> getAccountHistory(String accountNumber){
+    public List<OperationLog> getAccountHistory(String accountNumber){
         return operationRepository.findByAccountNumber(accountNumber);
     }
 }

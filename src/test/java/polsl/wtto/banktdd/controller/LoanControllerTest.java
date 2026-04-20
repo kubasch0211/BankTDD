@@ -52,4 +52,24 @@ class LoanControllerTest {
         // Sprawdzamy, czy kontroler wywołał serwis z poprawnymi danymi
         verify(loanService).takeLoan("1111111119", new BigDecimal("1000.00"));
     }
+    @Test
+    void shouldRepayLoanSuccessfully() throws Exception {
+        // given: JSON z numerem konta i kwotą do spłaty
+        String json = """
+                {
+                    "accountNumber": "1111111119",
+                    "amount": 250.00
+                }
+                """;
+
+        // when & then: Uderzamy pod adres spłaty i oczekujemy statusu 200 OK
+        mockMvc.perform(post("/api/loans/repay")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk());
+
+        // Sprawdzamy, czy kontroler wywołał serwis z poleceniem spłaty
+        // (Zakładam, że masz metodę 'repayLoan' w LoanService. Jeśli nazywa się inaczej, np. 'payInstallment', podmień nazwę tutaj!)
+        verify(loanService).repayLoan("1111111119", new BigDecimal("250.00"));
+    }
 }

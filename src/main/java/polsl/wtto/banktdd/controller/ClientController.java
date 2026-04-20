@@ -19,7 +19,8 @@ public class ClientController {
         clientService.addClient(
                 request.getFirstName(),
                 request.getLastName(),
-                request.getPesel()
+                request.getPesel(),
+                request.getAccountNumber()
         );
     }
     @PatchMapping("/{pesel}/lastName")
@@ -29,5 +30,12 @@ public class ClientController {
             @RequestParam String newLastName) {
 
         clientService.updateClientLastName(pesel, newLastName);
+    }
+
+    // Endpoint do usuwania klienta: DELETE http://localhost:8080/api/clients/12345678901
+    @DeleteMapping("/{pesel}")
+    @ResponseStatus(HttpStatus.NO_CONTENT) // 204 No Content to standard REST przy udanym usunięciu
+    public void deleteClient(@PathVariable String pesel) {
+        clientService.deleteClient(pesel);
     }
 }

@@ -3,12 +3,14 @@ package polsl.wtto.banktdd.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "loans")
 @Getter
+@Setter
 @NoArgsConstructor
 public class Loan {
     @Id

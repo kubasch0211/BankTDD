@@ -3,6 +3,7 @@ package polsl.wtto.banktdd.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import polsl.wtto.banktdd.dto.LoanRepaymentRequest;
 import polsl.wtto.banktdd.dto.LoanRequest;
 import polsl.wtto.banktdd.service.LoanService;
 
@@ -17,5 +18,12 @@ public class LoanController {
     @ResponseStatus(HttpStatus.CREATED)
     public void takeLoan(@RequestBody LoanRequest request) {
         loanService.takeLoan(request.getAccountNumber(), request.getAmount());
+    }
+
+
+    @PostMapping("/repay")
+    @ResponseStatus(HttpStatus.OK)
+    public void repayLoan(@RequestBody LoanRepaymentRequest request) {
+        loanService.repayLoan(request.getAccountNumber(), request.getAmount());
     }
 }

@@ -36,4 +36,30 @@ public class LoanService {
         Loan loan = new Loan(accountNumber, loanAmount, totalDebt);
         loanRepository.save(loan);
     }
+
+    @Transactional
+    public void repayLoan(String accountNumber, BigDecimal amount) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Konto nie istnieje"));
+
+        Loan loan = loanRepository.findByAccountName(accountNumber)
+                .orElseThrow(() -> new IllegalArgumentException("To konto nie ma aktywnego kredytu"));
+        if (account.getBalance().compareTo(amount) < 0) {
+            throw new IllegalArgumentException("Niewystarczające środki na koncie do spłaty raty");
+        }
+
+        account.setBalance(account.getBalance().subtract(amount));
+
+        BigDecimal newLoanAmount = loan.getRemainingDebt().subtract(amount);
+
+        if (newLoanAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            loanRepository.delete(loan);
+        } else {
+            loan.setRemainingDebt(newLoanAmount);
+            loanRepository.save(loan);
+        }
+
+        accountRepository.save(account);
+
+    }
 }

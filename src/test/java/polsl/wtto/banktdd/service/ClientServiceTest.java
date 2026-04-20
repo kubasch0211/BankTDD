@@ -7,7 +7,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import polsl.wtto.banktdd.domain.Client;
+import polsl.wtto.banktdd.repository.AccountRepository;
 import polsl.wtto.banktdd.repository.ClientRepository;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -20,6 +23,9 @@ class ClientServiceTest {
     @Mock
     private ClientRepository clientRepository;
 
+    @Mock
+    private AccountRepository accountRepository;
+
     @InjectMocks
     private ClientService clientService;
 
@@ -29,15 +35,18 @@ class ClientServiceTest {
         String firstName = "Jan";
         String lastName = "Kowalski";
         String pesel = "12345678901";
+        String accountNumber = "1111111119"; // Wymagany nowy parametr
 
         // Baza mówi: "Nie ma jeszcze takiego PESELu"
         when(clientRepository.existsByPesel(pesel)).thenReturn(false);
 
-        // when
-        clientService.addClient(firstName, lastName, pesel);
+        // Baza mówi: "Nie ma jeszcze takiego numeru konta"
+        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.empty());
+
+        // when (przekazujemy 4 argumenty)
+        clientService.addClient(firstName, lastName, pesel, accountNumber);
 
         // then
-        // Przechwytujemy obiekt Client, który serwis wysłał do zapisu w bazie
         ArgumentCaptor<Client> clientCaptor = ArgumentCaptor.forClass(Client.class);
         verify(clientRepository).save(clientCaptor.capture());
 
@@ -45,6 +54,8 @@ class ClientServiceTest {
         assertThat(savedClient.getFirstName()).isEqualTo("Jan");
         assertThat(savedClient.getLastName()).isEqualTo("Kowalski");
         assertThat(savedClient.getPesel()).isEqualTo("12345678901");
+        // Sprawdzamy, czy numer konta też poprawnie ustawił się w obiekcie
+        assertThat(savedClient.getAccountNumber()).isEqualTo("1111111119");
     }
 
     @Test
@@ -52,25 +63,23 @@ class ClientServiceTest {
         // given
         String pesel = "12345678901";
 
-        // Baza mówi: "Taki PESEL już jest w systemie"
         when(clientRepository.existsByPesel(pesel)).thenReturn(true);
 
-        // when & then
-        assertThatThrownBy(() -> clientService.addClient("Anna", "Nowak", pesel))
+        // when & then (dodany 4. argument z fikcyjnym numerem konta do testu)
+        assertThatThrownBy(() -> clientService.addClient("Anna", "Nowak", pesel, "2222222229"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Klient z podanym numerem PESEL już istnieje");
 
-        // Upewniamy się, że serwis w ogóle nie próbował niczego zapisać
         verify(clientRepository, never()).save(any());
     }
 
     @Test
     void shouldThrowExceptionWhenPeselIsInvalid() {
         // given
-        String invalidPesel = "123"; // za krótki
+        String invalidPesel = "123";
 
         // when & then
-        assertThatThrownBy(() -> clientService.addClient("Anna", "Nowak", invalidPesel))
+        assertThatThrownBy(() -> clientService.addClient("Anna", "Nowak", invalidPesel, "2222222229"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("PESEL musi mieć dokładnie 11 cyfr");
     }
@@ -79,16 +88,15 @@ class ClientServiceTest {
     void shouldDeleteClientSuccessfully() {
         // given
         String pesel = "12345678901";
-        // Tworzymy "istniejącego" klienta, którego chcemy usunąć
-        Client existingClient = new Client("Jan", "Kowalski", pesel);
+        // Używamy nowego konstruktora (4 parametry)
+        Client existingClient = new Client("Jan", "Kowalski", pesel, "1111111119");
 
-        // Uczymy atrapę bazy danych: jak zapytam o ten PESEL, zwróć mi tego klienta
-        when(clientRepository.findByPesel(pesel)).thenReturn(java.util.Optional.of(existingClient));
+        when(clientRepository.findByPesel(pesel)).thenReturn(Optional.of(existingClient));
 
-        // when: Wywołujemy akcję usuwania
+        // when
         clientService.deleteClient(pesel);
 
-        // then: Sprawdzamy, czy serwis faktycznie zlecił bazie usunięcie tego konkretnego obiektu
+        // then
         verify(clientRepository).delete(existingClient);
     }
 
@@ -97,38 +105,35 @@ class ClientServiceTest {
         // given
         String pesel = "99999999999";
 
-        // Baza danych mówi: "Nie mam nikogo z takim PESEL-em"
-        when(clientRepository.findByPesel(pesel)).thenReturn(java.util.Optional.empty());
+        when(clientRepository.findByPesel(pesel)).thenReturn(Optional.empty());
 
-        // when & then: Oczekujemy błędu
+        // when & then
         assertThatThrownBy(() -> clientService.deleteClient(pesel))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Klient z podanym numerem PESEL nie istnieje");
 
-        // Upewniamy się, że serwis w ogóle nie próbował wywołać usuwania (bo nie miał kogo)
         verify(clientRepository, never()).delete(any());
     }
+
     @Test
     void shouldUpdateClientLastNameSuccessfully() {
         // given
         String pesel = "12345678901";
-        String newLastName = "Nowak-Kowalska"; // Nowe nazwisko
+        String newLastName = "Nowak-Kowalska";
 
-        Client existingClient = new Client("Anna", "Kowalska", pesel);
+        // Używamy nowego konstruktora (4 parametry)
+        Client existingClient = new Client("Anna", "Kowalska", pesel, "1111111119");
 
-        // Baza mówi: "Tak, mam taką klientkę"
-        when(clientRepository.findByPesel(pesel)).thenReturn(java.util.Optional.of(existingClient));
+        when(clientRepository.findByPesel(pesel)).thenReturn(Optional.of(existingClient));
 
         // when
         clientService.updateClientLastName(pesel, newLastName);
 
         // then
-        // 1. Sprawdzamy, czy w obiekcie zmieniło się tylko nazwisko
         assertThat(existingClient.getFirstName()).isEqualTo("Anna");
         assertThat(existingClient.getPesel()).isEqualTo(pesel);
         assertThat(existingClient.getLastName()).isEqualTo(newLastName);
 
-        // 2. Upewniamy się, że serwis zapisał zaktualizowany obiekt w bazie
         verify(clientRepository).save(existingClient);
     }
 
@@ -138,16 +143,13 @@ class ClientServiceTest {
         String pesel = "99999999999";
         String newLastName = "Nowak";
 
-        // Baza mówi: "Nie ma u nas takiego PESELu"
-        when(clientRepository.findByPesel(pesel)).thenReturn(java.util.Optional.empty());
+        when(clientRepository.findByPesel(pesel)).thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> clientService.updateClientLastName(pesel, newLastName))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Klient z podanym numerem PESEL nie istnieje");
 
-        // Upewniamy się, że w razie błędu nic nie poszło do zapisu
         verify(clientRepository, never()).save(any());
     }
 }
-

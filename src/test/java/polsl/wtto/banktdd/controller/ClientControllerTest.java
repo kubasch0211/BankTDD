@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
 @ExtendWith(MockitoExtension.class)
 class ClientControllerTest {
@@ -34,20 +35,24 @@ class ClientControllerTest {
 
     @Test
     void shouldReturnCreatedStatusWhenClientIsAdded() throws Exception {
+        // given: Wymagamy teraz podania "accountNumber" w JSONie!
         String json = """
                 {
                     "firstName": "Jan",
                     "lastName": "Kowalski",
-                    "pesel": "12345678901"
+                    "pesel": "12345678901",
+                    "accountNumber": "1111111119"
                 }
                 """;
 
+        // when & then
         mockMvc.perform(post("/api/clients")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated());
 
-        verify(clientService).addClient("Jan", "Kowalski", "12345678901");
+        // Sprawdzamy, czy kontroler przekazał WSZYSTKIE 4 parametry do serwisu
+        verify(clientService).addClient("Jan", "Kowalski", "12345678901", "1111111119");
     }
     @Test
     void shouldUpdateClientLastNameSuccessfully() throws Exception {
@@ -62,5 +67,18 @@ class ClientControllerTest {
 
         // Sprawdzamy, czy kontroler przekazał to do naszego serwisu
         verify(clientService).updateClientLastName(pesel, newLastName);
+    }
+    @Test
+    void shouldDeleteClientSuccessfully() throws Exception {
+        // given
+        String pesel = "12345678901";
+
+        // when & then: Uderzamy metodą DELETE pod adres /api/clients/{pesel}
+        // Spodziewamy się statusu 204 (No Content), co jest dobrą praktyką przy usuwaniu
+        mockMvc.perform(delete("/api/clients/" + pesel))
+                .andExpect(status().isNoContent());
+
+        // Sprawdzamy, czy kontroler przekazał polecenie usunięcia do serwisu
+        verify(clientService).deleteClient(pesel);
     }
 }

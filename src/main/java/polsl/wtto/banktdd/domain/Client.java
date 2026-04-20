@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 public class Client {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // 4. Baza sama będzie nadawać ID (1, 2, 3...)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String firstName;
@@ -23,5 +23,12 @@ public class Client {
         this.firstName = firstName;
         this.lastName = lastName;
         this.pesel = pesel;
+    }
+
+    public void changeLastName(String newLastName) {
+        if (newLastName == null || newLastName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nazwisko nie może być puste");
+        }
+        this.lastName = newLastName;
     }
 }

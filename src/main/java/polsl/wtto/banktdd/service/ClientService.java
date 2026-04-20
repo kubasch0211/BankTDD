@@ -26,11 +26,20 @@ public class ClientService {
 
         clientRepository.save(new Client(firstName, lastName, pesel));
     }
+
     public void deleteClient(String pesel) {
         Client client = clientRepository.findByPesel(pesel)
                 .orElseThrow(() -> new IllegalArgumentException("Klient z podanym numerem PESEL nie istnieje"));
 
         clientRepository.delete(client);
+
+    }
+
+    public void updateClientLastName(String pesel, String newLastName) {
+        Client client = clientRepository.findByPesel(pesel)
+                .orElseThrow(() -> new IllegalArgumentException("Klient z podanym numerem PESEL nie istnieje"));
+        client.changeLastName(newLastName);
+        clientRepository.save(client);
     }
 
 }

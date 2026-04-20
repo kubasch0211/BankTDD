@@ -108,5 +108,46 @@ class ClientServiceTest {
         // Upewniamy się, że serwis w ogóle nie próbował wywołać usuwania (bo nie miał kogo)
         verify(clientRepository, never()).delete(any());
     }
+    @Test
+    void shouldUpdateClientLastNameSuccessfully() {
+        // given
+        String pesel = "12345678901";
+        String newLastName = "Nowak-Kowalska"; // Nowe nazwisko
+
+        Client existingClient = new Client("Anna", "Kowalska", pesel);
+
+        // Baza mówi: "Tak, mam taką klientkę"
+        when(clientRepository.findByPesel(pesel)).thenReturn(java.util.Optional.of(existingClient));
+
+        // when
+        clientService.updateClientLastName(pesel, newLastName);
+
+        // then
+        // 1. Sprawdzamy, czy w obiekcie zmieniło się tylko nazwisko
+        assertThat(existingClient.getFirstName()).isEqualTo("Anna");
+        assertThat(existingClient.getPesel()).isEqualTo(pesel);
+        assertThat(existingClient.getLastName()).isEqualTo(newLastName);
+
+        // 2. Upewniamy się, że serwis zapisał zaktualizowany obiekt w bazie
+        verify(clientRepository).save(existingClient);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingNonExistentClient() {
+        // given
+        String pesel = "99999999999";
+        String newLastName = "Nowak";
+
+        // Baza mówi: "Nie ma u nas takiego PESELu"
+        when(clientRepository.findByPesel(pesel)).thenReturn(java.util.Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> clientService.updateClientLastName(pesel, newLastName))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Klient z podanym numerem PESEL nie istnieje");
+
+        // Upewniamy się, że w razie błędu nic nie poszło do zapisu
+        verify(clientRepository, never()).save(any());
+    }
 }
 
